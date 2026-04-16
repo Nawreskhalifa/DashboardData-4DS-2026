@@ -8,33 +8,22 @@
 
 
 
+<!-- Dans MyDashboard.razor -->
 <div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h5 class="card-title"> <i class="bi bi-bookmark-fill"></i> Total Sensors</h5>
-                <h2>@TotalSensors</h2>
-            </div>
-        </div>
+    <div class="col-md-4 mb-3">
+        <!-- On passe les paramètres comme de simples attributs HTML -->
+        <KpiCard Title="Total Sondes" Value="@TotalSondes.ToString()"
+                 BackgroundColorClass="bg-primary" IconClass="bi-box-seam" />
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-thermometer-half"></i> Global Average</h5>
-                <h2>@Average.ToString("F1") °C</h2> 
-            </div>
-        </div>
+    <div class="col-md-4 mb-3">
+        <KpiCard Title="Moyenne Globale" Value="@($"{Moyenne:F1} °C")"
+                 BackgroundColorClass="bg-success" IconClass="bi-bullseye" />
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-danger">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-thermometer-high"></i> Max Value</h5>
-                <h2>@MaxValue.ToString("F1") °C</h2> 
-            </div>
-        </div>
+    <div class="col-md-4 mb-3">
+        <KpiCard Title="Alerte Max" Value="@($"{Max:F1} °C")"
+                 BackgroundColorClass="bg-danger" IconClass="bi-exclamation-triangle-fill" />
     </div>
 </div>
-
 
 @if(_isLoading) {
     <p><em>Chargement des données...</em></p>
@@ -77,6 +66,7 @@ else {
 
     private bool IsSystemOK = true;
     private List<SensorData> _sensors = new List<SensorData>();
+    <SensorTable Sensors="Sensors" />
     private bool _isLoading = true;
         Task<int> GetTotalCountAsync();
         Task<double> GetAverageValueAsync();
