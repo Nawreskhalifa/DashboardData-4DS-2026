@@ -7,43 +7,61 @@
 @inject NavigationManager NavManager
 
 
-<PageTitle>Mon Dashboard Data</PageTitle>
 
-<h1>Tableau de Bord</h1>
-
-<div class="alert-info" >  
-    Bienvenue sur l'interface de pilotage.
-    Nous somes le : <strong>@DateTime.Now.ToString("dd MMM yyyy")</strong>
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title"> <i class="bi bi-bookmark-fill"></i> Total Sensors</h5>
+                <h2>@TotalSensors</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-thermometer-half"></i> Global Average</h5>
+                <h2>@Average.ToString("F1") °C</h2> 
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-thermometer-high"></i> Max Value</h5>
+                <h2>@MaxValue.ToString("F1") °C</h2> 
+            </div>
+        </div>
+    </div>
 </div>
 
-<p>
-    Status du système :
-
-    @if (IsSystemOK) { 
-        <span class="badge bg-success">Opérationnel</span>  
-    }
-    else  {
-            <span class="badge bg-danger">Erreur Critique</span>
-    }
-</p>
 
 @if(_isLoading) {
     <p><em>Chargement des données...</em></p>
 }
 else {
-    <button class="btn btn-primary" @onclick="AddNewSensor">Add New</button>
+    <button class="btn btn-secondary " @onclick="LoadAll"><i class="bi bi-arrow-clockwise"></i> All Sensors</button>
+    <button class="btn btn-warning " @onclick="LoadCritical"><i class="bi bi-exclamation-triangle"></i> Alertes (> 30.0)</button>
+    <a href="/edit-sensor" class="btn btn-success "> <i class="bi bi-plus"></i> New Sensor</a>
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Capteur</th>
-                <th>Valeur</th>
+                <th>Actions</th>
+                <th>Sensor</th>
+                <th>Location</th>
+                <th>Current Value</th>
             </tr>
         </thead>
-        <tbody>
-            @foreach (var sensor in _sensors)
+          <tbody>
+            @foreach (var sensor in Sensors)
             {
                 <tr>
+                    <td>
+                        <a href="/edit-sensor/@sensor.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSensor(sensor.Id)"><i class="bi bi-trash"></i></button>
+                    </td>
                     <td>@sensor.Name</td>
+                    <td>@(sensor.Location?.Name ?? "Undefined")</td>
                     <td>@sensor.Value</td>
                 </tr>
             }
@@ -56,14 +74,47 @@ else {
     private bool IsSystemOK = true;
     private List<SensorData> _sensors = new List<SensorData>();
     private bool _isLoading = true;
+        Task<int> GetTotalCountAsync();
+        Task<double> GetAverageValueAsync();
+        Task<double> GetMaxValueAsync();
 
     protected override async Task OnInitializedAsync()
     {
-        _sensors = await SensorService.GetSensorDataAsync();
-        _isLoading = false;
+        await LoadAll();
     }
+
     private void AddNewSensor(MouseEventArgs args)
     {
         NavManager.NavigateTo("/add-sensor");
+    }
+      private async Task LoadAll()
+    {
+        Sensors = await SensorService.GetSensorsAsync();
+    }
+
+    private async Task LoadCritical()
+    {
+        Sensors = await SensorService.GetCriticalSensorsAsync(30.0);
+    }
+    private async Task LoadAll()
+    {
+        Sensors = await SensorService.GetSensorsAsync();
+        TotalSensors = await SensorService.GetTotalCountAsync();
+        Average = await SensorService.GetAverageValueAsync();
+        MaxValue = await SensorService.GetMaxValueAsync();
+    }
+
+    private async Task LoadCritical()
+    {
+        Sensors = await SensorService.GetCriticalSensorsAsync(30.0);
+    }
+
+    private async Task DeleteSensor(int id)
+    {
+        if (await SensorService.GetSensorByIdAsync(id) != null)
+        {
+            await SensorService.DeleteSensorAsync(id);
+            await LoadAll();
+        }
     }
 }
